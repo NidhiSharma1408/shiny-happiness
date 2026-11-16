@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Job Logger</title>
+		<style>
+			body {
+				width: 360px;
+				margin: 0;
+				padding: 12px;
+				font: 13px system-ui, sans-serif;
+			}
+			label {
+				display: block;
+				margin: 8px 0 2px;
+				font-weight: 600;
+			}
+			.row {
+				display: flex;
+				gap: 6px;
+			}
+			.row input {
+				flex: 1;
+			}
+			input,
+			select,
+			textarea {
+				width: 100%;
+				box-sizing: border-box;
+				padding: 5px;
+				font: inherit;
+			}
+			button {
+				padding: 5px 8px;
+				cursor: pointer;
+				font: inherit;
+			}
+			#save {
+				width: 100%;
+				margin-top: 12px;
+				padding: 8px;
+				font-weight: 600;
+			}
+			#status {
+				margin-top: 8px;
+				min-height: 18px;
+			}
+			#status.ok {
+				color: #0a7d2c;
+			}
+			#status.warn {
+				color: #a15c00;
+			}
+			#status.error {
+				color: #b00020;
+			}
+			details {
+				margin-top: 12px;
+			}
+		</style>
+	</head>
+	<body>
+		<label for="url">URL</label>
+		<input id="url" />
+
+		<div class="row">
+			<div style="flex: 1">
+				<label for="date">Date</label>
+				<input id="date" type="date" />
+			</div>
+			<div style="flex: 1">
+				<label for="platform">Platform</label>
+				<input id="platform" />
+			</div>
+		</div>
+
+		<label for="jobId"
+			>Job ID <small>(blank = auto-generated)</small></label
+		>
+		<div class="row">
+			<input id="jobId" />
+			<button type="button" data-fill="jobId">Use selection</button>
+		</div>
+
+		<label for="company">Company</label>
+		<div class="row">
+			<input id="company" />
+			<button type="button" data-fill="company">Use selection</button>
+		</div>
+
+		<label for="role">Role</label>
+		<div class="row">
+			<input id="role" />
+			<button type="button" data-fill="role">Use selection</button>
+		</div>
+
+		<label for="email">Email used</label>
+		<input id="email" type="email" />
+
+		<label for="status-select">Status</label>
+		<select id="status-select">
+			<option>Applied</option>
+			<option>Referred</option>
+			<option>Interview</option>
+			<option>Rejected</option>
+			<option>Offer</option>
+		</select>
+
+		<label for="notes">Notes</label>
+		<textarea id="notes" rows="2"></textarea>
+
+		<button id="save" type="button">Save to sheet</button>
+		<div id="status"></div>
+
+		<details>
+			<summary>Settings</summary>
+			<label for="webAppUrl">Apps Script web app URL</label>
+			<input id="webAppUrl" />
+			<label for="secret">Shared secret</label>
+			<input id="secret" type="password" />
+			<label for="defaultEmail">Default email</label>
+			<input id="defaultEmail" type="email" />
+			<label for="defaultStatus">Default status</label>
+			<select id="defaultStatus">
+				<option>Applied</option>
+				<option>Referred</option>
+				<option>Interview</option>
+				<option>Rejected</option>
+				<option>Offer</option>
+			</select>
+			<button id="saveSettings" type="button" style="margin-top: 8px">
+				Save settings
+			</button>
+		</details>
+
+		<script type="module" src="popup.js"></script>
+	</body>
+</html>
