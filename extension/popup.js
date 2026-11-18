@@ -1,6 +1,6 @@
 import {
   loadSettings, saveSettings, getActiveTab, getSelectedText,
-  derivePlatform, buildPayload, postToSheet,
+  derivePlatform, buildPayload, postToSheet, startMapping, takeLastCapture, getMappedFields,
 } from './lib.js';
 import { detectFields } from './adapters.js';
 
@@ -14,9 +14,10 @@ async function init() {
   renderSettings(settings);
   $('saveSettings').addEventListener('click', onSaveSettings);
   $('save').addEventListener('click', onSave);
+  $('settingsToggle').addEventListener('click', () => { $('settings').hidden = !$('settings').hidden; });
 
   if (!settings.webAppUrl || !settings.secret) {
-    document.querySelector('details').open = true;
+    $('settings').hidden = false;
     showStatus('Add your web app URL and secret in Settings to get started.', 'warn');
   }
 
@@ -29,6 +30,45 @@ async function init() {
   }
   await prefillForm(tab, settings);
   wireSelectionButtons(tab);
+  wireMapButtons(tab);
+  await applyLastCapture(tab);
+  await renderMapped(tab);
+}
+
+/** Mapped fields get a "mapped" tag and their Map button becomes an outlined "Re-map". */
+async function renderMapped(tab) {
+  const mapped = await getMappedFields(tab.url);
+  document.querySelectorAll('[data-map]').forEach((btn) => {
+    const isMapped = mapped.includes(btn.dataset.map);
+    btn.classList.toggle('mapped', isMapped);
+    btn.querySelector('.label').textContent = isMapped ? (btn.dataset.mappedLabel || 'Re-map')
+      : (btn.dataset.map === 'applyButton' ? 'Map Apply button' : 'Map');
+  });
+  document.querySelectorAll('[data-tag]').forEach((tag) => {
+    tag.hidden = !mapped.includes(tag.dataset.tag);
+  });
+}
+
+/** "Map" buttons: inject the mapper into the page. The popup closes itself as the page takes focus. */
+function wireMapButtons(tab) {
+  document.querySelectorAll('[data-map]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      try {
+        await startMapping(tab.id, btn.dataset.map);
+        window.close();
+      } catch (err) {
+        showStatus(err.message, 'error');
+      }
+    });
+  });
+}
+
+/** After mapping, the clicked element's text is the field value too, so fill it on reopen. */
+async function applyLastCapture(tab) {
+  const cap = await takeLastCapture(tab.url);
+  if (!cap) return;
+  if (FORM_FIELDS.includes(cap.field)) $(cap.field).value = cap.text;
+  showStatus(`Mapped ${cap.field} ✓ (selector saved for ${cap.host})`, 'ok');
 }
 
 /** Fill URL, date (today), platform, email/status defaults, plus anything detectFields finds. */
@@ -39,12 +79,17 @@ async function prefillForm(tab, settings) {
   $('url').value = tab.url;
   $('date').value = today;
   $('platform').value = derivePlatform(tab.url);
+  $('platformChip').textContent = $('platform').value;
+  $('platformChip').hidden = !$('platform').value;
   $('email').value = settings.defaultEmail;
   $('status-select').value = settings.defaultStatus;
 
-  const detected = await detectFields(tab);
+  const { values, failed } = await detectFields(tab);
   for (const key of ['company', 'role', 'jobId']) {
-    if (detected[key]) $(key).value = detected[key];
+    if (values[key]) $(key).value = values[key];
+  }
+  if (failed.length) {
+    showStatus(`Saved selector no longer matches for: ${failed.join(', ')}. Click Map to redo it.`, 'warn');
   }
 }
 
@@ -123,6 +168,7 @@ async function onSaveSettings() {
     defaultEmail: $('defaultEmail').value.trim(),
     defaultStatus: $('defaultStatus').value,
   });
+  $('settings').hidden = true;
   showStatus('Settings saved.', 'ok');
 }
 

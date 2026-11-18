@@ -1,138 +1,221 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<title>Job Logger</title>
-		<style>
-			body {
-				width: 360px;
-				margin: 0;
-				padding: 12px;
-				font: 13px system-ui, sans-serif;
-			}
-			label {
-				display: block;
-				margin: 8px 0 2px;
-				font-weight: 600;
-			}
-			.row {
-				display: flex;
-				gap: 6px;
-			}
-			.row input {
-				flex: 1;
-			}
-			input,
-			select,
-			textarea {
-				width: 100%;
-				box-sizing: border-box;
-				padding: 5px;
-				font: inherit;
-			}
-			button {
-				padding: 5px 8px;
-				cursor: pointer;
-				font: inherit;
-			}
-			#save {
-				width: 100%;
-				margin-top: 12px;
-				padding: 8px;
-				font-weight: 600;
-			}
-			#status {
-				margin-top: 8px;
-				min-height: 18px;
-			}
-			#status.ok {
-				color: #0a7d2c;
-			}
-			#status.warn {
-				color: #a15c00;
-			}
-			#status.error {
-				color: #b00020;
-			}
-			details {
-				margin-top: 12px;
-			}
-		</style>
-	</head>
-	<body>
-		<label for="url">URL</label>
-		<input id="url" />
+<head>
+  <meta charset="utf-8" />
+  <meta name="color-scheme" content="light dark" />
+  <title>Job Logger</title>
+  <style>
+    :root {
+      --bg: #ffffff; --surface: #f4f5f7; --text: #1b1f24; --muted: #667085; --border: #d9dde3;
+      --accent: #2563eb; --accent-text: #ffffff; --ok: #0a7d2c; --warn: #a15c00; --err: #b00020;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #16181d; --surface: #20232a; --text: #e8eaed; --muted: #9aa3af; --border: #343a44;
+        --accent: #6b9bff; --accent-text: #0b1220; --ok: #4cc77a; --warn: #e0a13a; --err: #ff6b7d;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      width: 380px; margin: 0; padding: 14px; background: var(--bg); color: var(--text);
+      font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    button { font: inherit; cursor: pointer; }
+    svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2;
+          stroke-linecap: round; stroke-linejoin: round; }
 
-		<div class="row">
-			<div style="flex: 1">
-				<label for="date">Date</label>
-				<input id="date" type="date" />
-			</div>
-			<div style="flex: 1">
-				<label for="platform">Platform</label>
-				<input id="platform" />
-			</div>
-		</div>
+    header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    h1 { margin: 0; font-size: 15px; font-weight: 650; }
+    .chip { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border);
+            background: var(--surface); color: var(--muted); font-size: 11px; }
 
-		<label for="jobId"
-			>Job ID <small>(blank = auto-generated)</small></label
-		>
-		<div class="row">
-			<input id="jobId" />
-			<button type="button" data-fill="jobId">Use selection</button>
-		</div>
+    .field { margin-bottom: 10px; }
+    label { display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
+            color: var(--muted); font-size: 12px; font-weight: 600; }
+    .hint { font-weight: 400; opacity: .8; }
+    .tag { padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--ok) 16%, transparent);
+           color: var(--ok); font-size: 10px; font-weight: 600; }
+    .tag[hidden] { display: none; }
 
-		<label for="company">Company</label>
-		<div class="row">
-			<input id="company" />
-			<button type="button" data-fill="company">Use selection</button>
-		</div>
+    input, select, textarea {
+      width: 100%; min-width: 0; height: 32px; padding: 0 10px; border: 1px solid var(--border);
+      border-radius: 8px; background: var(--surface); color: var(--text); font: inherit;
+    }
+    textarea { height: auto; padding: 6px 10px; resize: vertical; }
+    input:focus, select:focus, textarea:focus {
+      outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); border-color: var(--accent);
+    }
+    .control { display: flex; gap: 6px; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-		<label for="role">Role</label>
-		<div class="row">
-			<input id="role" />
-			<button type="button" data-fill="role">Use selection</button>
-		</div>
+    .icon-btn { flex: none; width: 32px; height: 32px; display: grid; place-items: center;
+                border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--muted); }
+    .icon-btn:hover { background: var(--surface); color: var(--text); }
+    .map-btn { flex: none; height: 32px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;
+               border: 0; border-radius: 8px; background: var(--accent); color: var(--accent-text); font-weight: 600; }
+    .map-btn:hover { filter: brightness(1.08); }
+    .map-btn.mapped { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+    .apply-btn { width: 100%; height: 34px; display: flex; align-items: center; justify-content: center; gap: 6px;
+                 border: 1px dashed var(--border); border-radius: 8px; background: transparent; color: var(--text); }
+    .apply-btn:hover { background: var(--surface); }
+    .apply-btn.mapped { border-style: solid; border-color: var(--ok); color: var(--ok); }
 
-		<label for="email">Email used</label>
-		<input id="email" type="email" />
+    details.more { margin: 2px 0 12px; }
+    details.more summary { display: flex; align-items: center; gap: 6px; padding: 2px 0; margin-bottom: 8px;
+                           color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer; list-style: none; }
+    details.more summary::-webkit-details-marker { display: none; }
+    details.more summary::before { content: "▸"; font-size: 10px; }
+    details.more[open] summary::before { content: "▾"; }
 
-		<label for="status-select">Status</label>
-		<select id="status-select">
-			<option>Applied</option>
-			<option>Referred</option>
-			<option>Interview</option>
-			<option>Rejected</option>
-			<option>Offer</option>
-		</select>
+    #save { width: 100%; height: 38px; margin-top: 12px; border: 0; border-radius: 10px;
+            background: var(--text); color: var(--bg); font-weight: 650; }
+    #save:disabled { opacity: .55; cursor: default; }
+    #status { margin-top: 10px; padding: 8px 10px; border-radius: 8px; border-left: 3px solid var(--border);
+              background: var(--surface); font-size: 12px; }
+    #status:empty { display: none; }
+    #status.ok { border-left-color: var(--ok); color: var(--ok); }
+    #status.warn { border-left-color: var(--warn); color: var(--warn); }
+    #status.error { border-left-color: var(--err); color: var(--err); }
 
-		<label for="notes">Notes</label>
-		<textarea id="notes" rows="2"></textarea>
+    #settings { margin-bottom: 14px; padding: 12px; border: 1px solid var(--border); border-radius: 10px;
+                background: var(--surface); }
+    #settings[hidden] { display: none; }
+    #settings input, #settings select { background: var(--bg); }
+    #saveSettings { width: 100%; height: 32px; margin-top: 4px; border: 1px solid var(--border);
+                    border-radius: 8px; background: var(--bg); color: var(--text); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>Job Logger</h1>
+      <span id="platformChip" class="chip" hidden></span>
+    </div>
+    <button id="settingsToggle" type="button" class="icon-btn" title="Settings" aria-label="Settings">
+      <svg viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>
+    </button>
+  </header>
 
-		<button id="save" type="button">Save to sheet</button>
-		<div id="status"></div>
+  <section id="settings" hidden>
+    <div class="field">
+      <label for="webAppUrl">Apps Script web app URL</label>
+      <input id="webAppUrl" placeholder="https://script.google.com/macros/s/…/exec" />
+    </div>
+    <div class="field">
+      <label for="secret">Shared secret</label>
+      <input id="secret" type="password" />
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="defaultEmail">Default email</label>
+        <input id="defaultEmail" type="email" />
+      </div>
+      <div class="field">
+        <label for="defaultStatus">Default status</label>
+        <select id="defaultStatus">
+          <option>Applied</option>
+          <option>Referred</option>
+          <option>Interview</option>
+          <option>Rejected</option>
+          <option>Offer</option>
+        </select>
+      </div>
+    </div>
+    <button id="saveSettings" type="button">Save settings</button>
+  </section>
 
-		<details>
-			<summary>Settings</summary>
-			<label for="webAppUrl">Apps Script web app URL</label>
-			<input id="webAppUrl" />
-			<label for="secret">Shared secret</label>
-			<input id="secret" type="password" />
-			<label for="defaultEmail">Default email</label>
-			<input id="defaultEmail" type="email" />
-			<label for="defaultStatus">Default status</label>
-			<select id="defaultStatus">
-				<option>Applied</option>
-				<option>Referred</option>
-				<option>Interview</option>
-				<option>Rejected</option>
-				<option>Offer</option>
-			</select>
-			<button id="saveSettings" type="button" style="margin-top: 8px">
-				Save settings
-			</button>
-		</details>
+  <div class="field">
+    <label for="role">Role <span class="tag" data-tag="role" hidden>mapped</span></label>
+    <div class="control">
+      <input id="role" placeholder="Job title" />
+      <button type="button" class="icon-btn" data-fill="role" title="Use highlighted text" aria-label="Use highlighted text for role">
+        <svg viewBox="0 0 24 24"><path d="M8 4h8M8 20h8M12 4v16"/></svg>
+      </button>
+      <button type="button" class="map-btn" data-map="role" title="Click the element on the page to map it">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+        <span class="label">Map</span>
+      </button>
+    </div>
+  </div>
 
-		<script type="module" src="popup.js"></script>
-	</body>
+  <div class="field">
+    <label for="company">Company <span class="tag" data-tag="company" hidden>mapped</span></label>
+    <div class="control">
+      <input id="company" placeholder="Company name" />
+      <button type="button" class="icon-btn" data-fill="company" title="Use highlighted text" aria-label="Use highlighted text for company">
+        <svg viewBox="0 0 24 24"><path d="M8 4h8M8 20h8M12 4v16"/></svg>
+      </button>
+      <button type="button" class="map-btn" data-map="company" title="Click the element on the page to map it">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+        <span class="label">Map</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="jobId">Job ID <span class="hint">optional, auto-generated if blank</span> <span class="tag" data-tag="jobId" hidden>mapped</span></label>
+    <div class="control">
+      <input id="jobId" placeholder="e.g. R-12345" />
+      <button type="button" class="icon-btn" data-fill="jobId" title="Use highlighted text" aria-label="Use highlighted text for job ID">
+        <svg viewBox="0 0 24 24"><path d="M8 4h8M8 20h8M12 4v16"/></svg>
+      </button>
+      <button type="button" class="map-btn" data-map="jobId" title="Click the element on the page to map it">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+        <span class="label">Map</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="row2">
+    <div class="field">
+      <label for="status-select">Status</label>
+      <select id="status-select">
+        <option>Applied</option>
+        <option>Referred</option>
+        <option>Interview</option>
+        <option>Rejected</option>
+        <option>Offer</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="date">Date</label>
+      <input id="date" type="date" />
+    </div>
+  </div>
+
+  <details class="more">
+    <summary>More details</summary>
+    <div class="field">
+      <label for="url">URL</label>
+      <input id="url" />
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="platform">Platform</label>
+        <input id="platform" />
+      </div>
+      <div class="field">
+        <label for="email">Email used</label>
+        <input id="email" type="email" />
+      </div>
+    </div>
+    <div class="field">
+      <label for="notes">Notes</label>
+      <textarea id="notes" rows="2"></textarea>
+    </div>
+  </details>
+
+  <button type="button" class="apply-btn" data-map="applyButton" data-mapped-label="Apply button mapped · re-map"
+          title="Click the page's Apply button to map it">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+    <span class="label">Map Apply button</span>
+  </button>
+
+  <button id="save" type="button">Save to sheet</button>
+  <div id="status" role="status"></div>
+
+  <script type="module" src="popup.js"></script>
+</body>
 </html>
